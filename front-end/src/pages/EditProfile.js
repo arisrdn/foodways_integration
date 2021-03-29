@@ -1,8 +1,8 @@
 import { useContext, useState } from "react";
 import { AuthContext } from "../contexts/authContext";
 
-import map from "../compnents/img/map.svg";
-import clip from "../compnents/img/paperclip.svg";
+import map from "../compnents/assets/img/map.svg";
+import clip from "../compnents/assets/img/paperclip.svg";
 import Maps from "../compnents/Maps";
 
 const EditProfile = () => {

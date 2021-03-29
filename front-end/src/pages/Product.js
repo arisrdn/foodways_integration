@@ -1,10 +1,11 @@
 import { useContext, useEffect } from "react";
 import { KeranjangContext } from "../contexts/keranjangContext";
+import { useParams } from "react-router-dom";
 
 import { Card } from "../compnents/Card";
 // import { products } from "../API/Data";
 import { products } from "../API/product";
-import { useParams } from "react-router-dom";
+import Heromenu from "../compnents/hero/Heromenu";
 
 function Product() {
 	const [state, dispatch] = useContext(KeranjangContext);
@@ -27,12 +28,10 @@ function Product() {
 
 	console.log("ininini", filteredProduct);
 	return (
-		<div>
+		<div className=" mt-5 pb-3">
 			<div className="container pt-3">
-				<div className="row py-3 mt-3 mt-custom">
-					<div className="my-2 col-12 ">
-						<h2>Menu</h2>
-					</div>
+				<Heromenu />
+				<div className="row pb-3 ">
 					<div className="row">
 						{filteredProduct.map((product) => (
 							<div className="col-sm-3">

@@ -1,4 +1,4 @@
-import clip from "../compnents/img/paperclip.svg";
+import clip from "../compnents/assets/img/paperclip.svg";
 
 const AddProduct = () => {
 	return (

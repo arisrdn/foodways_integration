@@ -2,13 +2,21 @@ import { createContext, useReducer } from "react";
 
 export const KeranjangContext = createContext();
 
-const initialState = { carts: [] };
+const initialState = { carts: [], currentRestaurant: null, modal: false };
 
 export const reducer = (state, { type, payload }) => {
-	console.log("keranjang contect", state.carts);
+	console.log("keranjang contect", state);
 	switch (type) {
 		case "ADD_CART":
-			// console.log("di context", payload);
+			if (state.carts.length) {
+				if (payload.restaurantId !== state.currentRestaurant) {
+					return {
+						...state,
+						modal: true,
+					};
+				}
+			}
+
 			const checkProductById = state.carts.find(
 				(cart) => cart.id === payload.id
 			);
@@ -31,6 +39,7 @@ export const reducer = (state, { type, payload }) => {
 			return {
 				// //add data
 				...state,
+				currentRestaurant: payload.restaurantId,
 				carts: [
 					...state.carts,
 					{
@@ -67,6 +76,21 @@ export const reducer = (state, { type, payload }) => {
 				};
 			}
 			return;
+		case "MODAL_OPEN":
+			return {
+				...state,
+				modal: true,
+			};
+		case "MODAL_CLOSE":
+			return {
+				...state,
+				modal: false,
+			};
+		case "EMPETY_CART":
+			return {
+				...state,
+				carts: [],
+			};
 		default:
 			throw new Error();
 	}

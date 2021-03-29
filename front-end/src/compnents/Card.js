@@ -2,7 +2,7 @@ import { useHistory } from "react-router";
 import { useContext } from "react";
 
 import { AuthContext } from "../contexts/authContext";
-import convertToRupiah from "../compnents/ToRupiah";
+import convertToRupiah from "../compnents/utils/ToRupiah";
 
 export const CardPopular = (props) => {
 	const { name, logo, id } = props.data;
@@ -18,7 +18,7 @@ export const CardPopular = (props) => {
 			<div
 				className="card "
 				onClick={() => {
-					history.push(`/market/${id}`);
+					history.push(`/restaurant/${id}`);
 				}}
 				style={{
 					height: "100px",
@@ -52,7 +52,7 @@ export const CardNearyou = (props) => {
 			<div
 				className="card mb-3"
 				onClick={() => {
-					history.push(`/market/${id}`);
+					history.push(`/restaurant/${id}`);
 				}}
 			>
 				<div className="py-2 px-2">
@@ -81,15 +81,15 @@ export const CardNearyou = (props) => {
 	);
 };
 
-export const Card = ({ product, fromProduct, addProductToCart }) => {
-	const { name, logo, price } = product;
-
+export const Card = ({ product, fromProduct, addProductToCart, url }) => {
+	const { tittle, image, price } = product;
+	// console.log(product);
 	return (
 		<div className="mb-3 card">
 			<div className="py-2 px-2">
 				<img
-					src={logo}
-					alt={name}
+					src={url + image}
+					alt={tittle}
 					style={{
 						height: "140px",
 						objectFit: "cover",
@@ -100,7 +100,7 @@ export const Card = ({ product, fromProduct, addProductToCart }) => {
 			<div className="card-body ">
 				<div
 					style={{
-						height: "60px",
+						height: "38px",
 					}}
 				>
 					<h5
@@ -109,7 +109,7 @@ export const Card = ({ product, fromProduct, addProductToCart }) => {
 							fontWeight: "600",
 						}}
 					>
-						{name}
+						{tittle}
 					</h5>
 				</div>
 				<small className="text-danger">{convertToRupiah(price)}</small>

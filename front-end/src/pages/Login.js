@@ -1,50 +1,26 @@
 import { useContext, useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useHistory, Redirect } from "react-router-dom";
 import { API, setAuthToken } from "../config/api";
 
 import { AuthContext } from "../contexts/authContext";
 
-import { Button, Form, Modal } from "react-bootstrap";
+import { Button, Form, Modal, Alert } from "react-bootstrap";
 
 function Login(props) {
-	console.log(props);
+	// console.log(props);
 	const [state, dispatch] = useContext(AuthContext);
 	const router = useHistory();
 	const [form, setForm] = useState({
 		email: "",
 		password: "",
 	});
-
-	// const LoginUser = () => {
-	// 	dispatch({
-	// 		type: "LOGIN",
-	// 		payload: { email: form.email },
-	// 	});
-
-	// 	if (state.user.type) {
-	// 		// console.log("masuk", state);
-	// 		if (state.user.type === 1) {
-	// 			router.push("/");
-	// 			handleClose();
-	// 			setForm({
-	// 				email: "",
-	// 				password: "",
-	// 			});
-	// 		} else {
-	// 			handleClose();
-	// 			router.push("/transaction");
-	// 			setForm({
-	// 				email: "",
-	// 				password: "",
-	// 			});
-	// 		}
-	// 	}
-	// };
+	const { email, password } = form;
 
 	const handleClose = () => {
 		dispatch({
 			type: "MODAL_LOGIN_CLOSE",
 		});
+		state.redirect ? <Redirect to="/" /> : <></>;
 	};
 	const handleOpenRegister = () => {
 		handleClose();
@@ -58,36 +34,44 @@ function Login(props) {
 		updateForm[e.target.name] = e.target.value;
 		setForm(updateForm);
 	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		// LoginUser();
+		handleClose();
 		try {
-			const body = JSON.stringify({
-				email,
-				password,
-			});
-
 			const config = {
 				headers: {
 					"Content-Type": "application/json",
 				},
 			};
 
-			const user = await API.post("/login", body, config);
+			const body = JSON.stringify({
+				email,
+				password,
+			});
+
+			const response = await API.post("/login", body, config);
 
 			dispatch({
 				type: "LOGIN_SUCCESS",
-				payload: user.data.data.user,
+				payload: response.data.data.user,
 			});
+			setForm({
+				password: "",
+			});
+			setAuthToken(response.data.data.user.token);
+			router.push("/");
 
-			setAuthToken(user.data.data.user.token);
-
-			history.push("/home");
-		} catch (error) {
-			console.log(error);
+			//   console.log(response.data);
+		} catch (err) {
+			console.log("err", err.response.status.status);
+			// if (err.response.status === 400) {
+			// 	alert("sas");
+			// } else {
+			// }
 		}
 	};
-	// console.log("login", state);
+	// console.log("login", handleSubmit);
 	return (
 		<Modal
 			// show={state.modalLogin}{modalshow}
@@ -96,12 +80,17 @@ function Login(props) {
 			onHide={props.onHide ? props.onHide : handleClose}
 			size="sm"
 			centered
-			className={state.error ? "error " : ""}
+			className={state.error ? "error avenir " : "avenir"}
 		>
 			<Modal.Body>
 				<div className="form-title mb-3">
 					<h4 className="text-yellow">Login</h4>
 				</div>
+				{/* {addrestaurant.error?.response?.data?.message && ( */}
+				{/* <Alert variant="danger"> */}
+				{/* {addrestaurant.error?.response?.data?.message} */}
+				{/* </Alert> */}
+				{/* // )} */}
 				<div className="d-flex flex-column">
 					<Form onSubmit={(e) => handleSubmit(e)}>
 						<Form.Group controlId="formBasicEmail">
@@ -129,6 +118,7 @@ function Login(props) {
 							type="submit"
 							variant="brown"
 							className="btn btn-block btn-round"
+							disabled={!form.email || !form.password ? true : false}
 						>
 							Login
 						</Button>

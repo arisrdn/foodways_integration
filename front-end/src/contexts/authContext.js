@@ -5,31 +5,10 @@ export const AuthContext = createContext();
 const initialState = {
 	modalLogin: false,
 	modalRegister: false,
-	email: null,
-	user: {},
 	isLogin: false,
 	error: null,
 	errormail: null,
-	users: [
-		{
-			id: 1,
-			email: "user1@gmail.com",
-			name: "Aris User",
-			type: 1,
-			phone: "0987654421",
-			img:
-				"https://images.unsplash.com/photo-1586297135537-94bc9ba060aa?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1100&q=80",
-		},
-		{
-			id: 2,
-			email: "user2@gmail.com",
-			name: "Aris Partner",
-			phone: "0827654421",
-			type: 2,
-			img:
-				"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1950&q=80",
-		},
-	],
+	loading: true,
 };
 
 export const reducer = (state, { type, payload }) => {
@@ -55,29 +34,30 @@ export const reducer = (state, { type, payload }) => {
 				...state,
 				modalRegister: false,
 			};
-		case "LOGOUT":
-			console.log("logout");
+		case "USER_SUCCESS":
+		case "LOGIN_SUCCESS":
+			localStorage.setItem("token", payload.token);
+
 			return {
 				...state,
-				user: {},
+				isLogin: true,
+				user: {
+					email: payload.email,
+					fullName: payload.fullName,
+					image: payload.image,
+					phone: payload.phone,
+					restaurant: payload.restaurant,
+				},
+				loading: false,
 			};
-		case "LOGIN":
-			// console.log("login", payload);
-
-			const checkUser = state.users.find((u) => u.email === payload.email);
-			if (checkUser) {
-				state.user = checkUser;
-
-				return {
-					...state,
-					error: null,
-				};
-			} else {
-			}
-
+		case "AUTH_ERROR":
+		case "LOGOUT":
+			localStorage.removeItem("token");
 			return {
 				...state,
-				error: "email tidak di temukan",
+				isLogin: false,
+				loading: false,
+				user: null,
 			};
 		case "REGISTER":
 			// console.log("REgister", payload);

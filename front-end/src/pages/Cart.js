@@ -1,14 +1,32 @@
-import map from "../compnents/img/map.svg";
+import map from "../compnents/assets/img/map.svg";
 
-import { useContext, useState } from "react";
+import Pin from "../compnents/maps/Pin";
+
+import ReactMapGL, { Marker, NavigationControl } from "react-map-gl";
+import { useState, useContext, useCallback, useEffect } from "react";
+import { useMutation } from "react-query";
+import { API } from "../config/api";
+import { useHistory } from "react-router-dom";
+
 import { KeranjangContext } from "../contexts/keranjangContext";
 import { Link } from "react-router-dom";
-import convertToRupiah from "../compnents/ToRupiah";
-import Maps from "../compnents/Maps";
-
+import convertToRupiah from "../compnents/utils/ToRupiah";
+import Maps from "../compnents/maps/Modal";
+import {
+	Container,
+	Col,
+	Row,
+	Form,
+	Button,
+	Modal,
+	Alert,
+} from "react-bootstrap";
 const Cart = () => {
+	const router = useHistory();
+
 	const [state, dispatch] = useContext(KeranjangContext);
 	const [modalShow, setModalShow] = useState(false);
+	const [modalShow2, setModalShow2] = useState(false);
 
 	const deleteProductFromCart = (id) => {
 		dispatch({
@@ -57,7 +75,91 @@ const Cart = () => {
 		return subtotal + ongkir;
 	}
 
-	// console.log(state.carts);
+	//Maps
+	const token =
+		"pk.eyJ1IjoiYXJpc2FyZXMyMiIsImEiOiJja21hNHN4bncxbzN1Mm5wcnZqZmhmd245In0.mo6lAUdwinLZchtCADFthw";
+
+	const [place, setPlace] = useState("");
+	const [form, setForm] = useState({
+		location: " 106.88203,-6.91506",
+	});
+	const { location } = form;
+
+	const [address, setAddress] = useState("");
+
+	const [marker, setMarker] = useState({
+		longitude: 106.91905,
+		latitude: -6.9123,
+	});
+	const [events, logEvents] = useState({});
+	const onMarkerDragStart = useCallback((event) => {
+		logEvents((_events) => ({ ..._events, onDragStart: event.lngLat }));
+	}, []);
+
+	const onMarkerDrag = useCallback((event) => {
+		logEvents((_events) => ({ ..._events, onDrag: event.lngLat }));
+	}, []);
+
+	const onMarkerDragEnd = useCallback((event) => {
+		logEvents((_events) => ({ ..._events, onDragEnd: event.lngLat }));
+		setMarker({
+			longitude: event.lngLat[0],
+			latitude: event.lngLat[1],
+		});
+		setForm({
+			// ...form,
+			location: event.lngLat[0] + "," + event.lngLat[1],
+		});
+	}, []);
+	const fetchLocation = async () => {
+		const token =
+			"pk.eyJ1IjoiaWxoYW0yNSIsImEiOiJja20yczc0dm0zOWczMndwMzVmdmJ1bjI4In0.1l2Zgxjy5R0iW2SlySO_fQ";
+		const apiUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${location}.json?limit=1&access_token=${token}`;
+
+		const api = await fetch(apiUrl);
+		const response = await api.json();
+
+		setPlace(response?.features[0]?.text);
+		setAddress(response?.features[0]?.place_name);
+	};
+
+	// console.log("asas", onMarkerDragEnd)
+	useEffect(() => {
+		fetchLocation();
+	}, [location]);
+
+	// ??order
+	const product = state.carts;
+	// console.log("prou", product);
+	const createTransaction = useMutation(async () => {
+		const body = JSON.stringify({
+			shippingFee: 10000,
+			locationDelivery: location,
+			product,
+		});
+
+		const config = {
+			headers: {
+				"Content-Type": "application/json",
+			},
+		};
+
+		await API.post("/transaction", body, config);
+	});
+
+	const handleOrder = () => {
+		// e.preventDefault();
+		// alert("hello");
+		// handleClose();
+		createTransaction.mutate();
+		dispatch({
+			type: "EMPETY_CART",
+		});
+
+		router.push("/profile");
+	};
+
+	console.log("state", state.carts);
 
 	return (
 		<>
@@ -67,7 +169,7 @@ const Cart = () => {
 						<>
 							<div className="my-2 col-10 ">
 								<div class="mb-4">
-									<h2>Geprek Bensu</h2>
+									<h2>ORDER</h2>
 								</div>
 								<div class="input-group mb-3">
 									<div className="col-12 px-1">
@@ -78,6 +180,7 @@ const Cart = () => {
 											type="text"
 											class="form-control"
 											placeholder="Search"
+											value={address}
 										/>
 									</div>
 									<div className="col-3 pr-0">
@@ -111,7 +214,9 @@ const Cart = () => {
 															}}
 														>
 															<img
-																src={cart.logo}
+																src={
+																	"http://localhost:5000/uploads/" + cart.image
+																}
 																alt="menu"
 																style={{
 																	height: "80px",
@@ -120,7 +225,7 @@ const Cart = () => {
 																}}
 															/>{" "}
 														</th>
-														<td>{cart.name}</td>
+														<td>{cart.tittle}</td>
 														<td
 															className="text-danger	text-right"
 															style={{ width: "35%" }}
@@ -257,7 +362,11 @@ const Cart = () => {
 							<div className="my-2 col-10 row px-0 ">
 								<div className="col"></div>
 								<div className="col-4">
-									<button class="btn btn-brown btn-block" type="submit">
+									<button
+										class="btn btn-brown btn-block"
+										onClick={() => setModalShow2(true)}
+										onClick={handleOrder}
+									>
 										Order
 									</button>
 								</div>
@@ -298,7 +407,152 @@ const Cart = () => {
 					)}
 				</div>
 			</div>
-			<Maps show={modalShow} onHide={() => setModalShow(false)} />
+
+			<Maps
+				show={modalShow}
+				onHide={() => setModalShow(false)}
+				children={
+					<>
+						<Marker
+							longitude={marker.longitude}
+							latitude={marker.latitude}
+							offsetTop={-20}
+							offsetLeft={-10}
+							draggable
+							onDragStart={onMarkerDragStart}
+							onDrag={onMarkerDrag}
+							onDragEnd={onMarkerDragEnd}
+						>
+							<Pin size={20} />
+						</Marker>
+						<div
+							className="shadow p-3 overflow-auto"
+							style={{
+								width: "400px",
+								height: "150px",
+								position: "absolute",
+								left: "50%",
+								bottom: "0",
+								backgroundColor: "white",
+								transform: "translateX(-50%)",
+								borderRadius: "5px",
+							}}
+						>
+							<Row className="mb-2">
+								<Col>
+									<h5 className="font-weight-bold text-center mb-0">
+										Select delivery location
+									</h5>
+								</Col>
+							</Row>
+							<Row className="mb-3">
+								<Col lg={2}>
+									{/* <img src={iconMapPointer} alt="map pointer" width="55" /> */}
+								</Col>
+								<Col lg={10}>
+									<Row>
+										<Col lg={12}>
+											{/* <small className="font-weight-bold">{place}</small> */}
+										</Col>
+
+										<Col lg={12} style={{ lineHeight: "1" }}>
+											<small className="text-sm">{address}</small>
+										</Col>
+									</Row>
+								</Col>
+							</Row>
+							<Row>
+								<Col>
+									<Button
+										// onClick={handleMapClose}
+										variant="brown"
+										className="w-100"
+										onClick={() => setModalShow(false)}
+									>
+										Confirm Location
+									</Button>
+								</Col>
+							</Row>
+						</div>
+					</>
+				}
+			/>
+			<Maps
+				show={modalShow2}
+				onHide={() => setModalShow2(false)}
+				children={
+					<>
+						<Marker
+							longitude={marker.longitude}
+							latitude={marker.latitude}
+							offsetTop={-20}
+							offsetLeft={-10}
+							draggable
+							onDragStart={onMarkerDragStart}
+							onDrag={onMarkerDrag}
+							onDragEnd={onMarkerDragEnd}
+						>
+							<Pin size={20} />
+						</Marker>
+						<div
+							className="shadow p-3 overflow-auto"
+							style={{
+								width: "200px",
+								height: "100%",
+								position: "absolute",
+								right: "3px",
+								top: "3px",
+								backgroundColor: "white",
+								borderRadius: "5px",
+							}}
+						>
+							<Row className="mb-4">
+								<Col>
+									<h5 className="font-weight-bold mb-0">
+										Waiting for the transaction to be approved
+									</h5>
+								</Col>
+							</Row>
+							<Row className="mb-5">
+								<Col lg={2}>
+									{/* <img src={iconMapPointer} alt="map pointer" width="55" /> */}
+								</Col>
+								<Col lg={10}>
+									<Row>
+										<Col lg={12}>
+											<small className="font-weight-bold">{place}</small>
+										</Col>
+
+										<Col lg={12} style={{ lineHeight: "1" }}>
+											<small className="text-sm">{address}</small>
+										</Col>
+									</Row>
+								</Col>
+							</Row>
+							<Row>
+								<Col lg={12} className="mb-4">
+									<h5 className="font-weight-bold mb-0">Delivery Time</h5>
+								</Col>
+								<Col>
+									<p>10 - 15 minutes</p>
+								</Col>
+							</Row>
+							{/* {isFinished && ( */}
+							<Row className="mt-4">
+								<Col lg={12}>
+									<Button
+										variant="brown"
+										className="w-100"
+										// onClick={handleFinished}
+									>
+										Finished Order
+									</Button>
+								</Col>
+							</Row>
+						</div>
+					</>
+				}
+			/>
 		</>
 	);
 };

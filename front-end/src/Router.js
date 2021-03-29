@@ -1,77 +1,154 @@
-import React, { useState, useEffect } from "react";
-import { Switch, Route, useLocation, Redirect } from "react-router-dom";
+import React, { useState, useEffect, useContext } from "react";
+import { Switch, Route, useLocation, useHistory } from "react-router-dom";
 
 import { KeranjangContextProvider } from "./contexts/keranjangContext";
-import { AuthContextProvaider } from "./contexts/authContext";
+import { AuthContext } from "./contexts/authContext";
 
-import Navigation from "./compnents/Nav";
+import Navigation from "./compnents/navbar/Nav";
 
-import Test from "./pages/Test";
-import Home from "./pages/Home";
-import Product from "./pages/Product";
-import Profile from "./pages/Profile";
-import Cart from "./pages/Cart";
-import EditProfile from "./pages/EditProfile";
-import AddProduct from "./pages/AddProduct";
-import Transaction from "./pages/Transaction";
+import Home from "./pages/home/";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Test from "./pages/Test";
+import Product from "./pages/product/index";
+// import Profile from "./pages/Profile";
+import Profile from "./pages/Profile/index";
+import Cart from "./pages/Cart";
+import EditProfile from "./pages/Profile/Edit";
+// import EditProfile from "./pages/EditProfile";
+import AddProduct from "./pages/product/Create";
+import EditProduct from "./pages/product/Edit";
+// import AddProduct from "./pages/AddProduct";
+import Transaction from "./pages/Transaction";
 
-import PrivateRoute from "./compnents/PrivateRoute";
+import CreateRestaurant from "./pages/restaurant/Create";
+import MyRestaurant from "./pages/restaurant/index";
+import Editrestaurant from "./pages/restaurant/Edit";
+
+import PrivateRoute from "./compnents/route/PrivateRoute";
+import Modal from "./compnents/Modala";
+import { API, setAuthToken } from "./config/api";
+
 function useQuery() {
 	return new URLSearchParams(useLocation().search);
 }
+
+// init accessToken
+if (localStorage.token) {
+	setAuthToken(localStorage.token);
+}
+
 export default function MasterRoute() {
 	let query = useQuery();
+	const [state, dispatch] = useContext(AuthContext);
+	const checkUser = async () => {
+		try {
+			const response = await API.get("/check-auth");
+
+			if (response.status === 401) {
+				// alert("Hello! I am an alert box!");
+				// console.log("error");
+				return dispatch({
+					type: "AUTH_ERROR",
+				});
+			}
+
+			let payload = response.data.data.user;
+			payload.token = localStorage.token;
+
+			dispatch({
+				type: "LOGIN_SUCCESS",
+				payload,
+			});
+		} catch (error) {
+			console.log(error);
+			dispatch({
+				type: "AUTH_ERROR",
+			});
+		}
+	};
+
+	useEffect(() => {
+		checkUser();
+	}, []);
+
 	return (
-		<AuthContextProvaider>
-			<KeranjangContextProvider>
-				<Navigation />
-				<Switch>
-					<Route exact path="/">
-						<Home />
-					</Route>
-					<PrivateRoute exact path="/profile" component={Profile} />
-					<PrivateRoute exact path="/profile" component={Profile} />
-					<PrivateRoute exact path="/Cart" component={Cart} />
-					<PrivateRoute exact path="/product/add" component={AddProduct} />
-					<PrivateRoute exact path="/profile/edit" component={EditProfile} />
-					<PrivateRoute exact path="/transaction" component={Transaction} />
-					<PrivateRoute exact path="/market/:id" component={Product} />
-					<Route exact path="/test">
-						<Test />
-					</Route>
-				</Switch>
-				<Register />
-				<Login />
-				<Child popUP={query.get("popup")} />
-			</KeranjangContextProvider>
-		</AuthContextProvaider>
+		<KeranjangContextProvider>
+			<Navigation />
+			<Switch>
+				<Route exact path="/">
+					<Home />
+				</Route>
+				<PrivateRoute exact path="/profile" component={Profile} />
+				<PrivateRoute exact path="/profile/edit" component={EditProfile} />
+				{/* <PrivateRoute exact path="/profile" component={Profile} /> */}
+				{/* <PrivateRoute exact path="/product/add" component={AddProduct} /> */}
+				<PrivateRoute exact path="/Cart" component={Cart} />
+				<PrivateRoute exact path="/transaction" component={Transaction} />
+				<PrivateRoute exact path="/restaurant/:id" component={Product} />
+				<PrivateRoute exact path="/restaurant" component={Product} />
+				<PrivateRoute
+					exact
+					path="/my-restaurant/create"
+					component={CreateRestaurant}
+				/>
+				<PrivateRoute exact path="/my-restaurant" component={MyRestaurant} />
+				<PrivateRoute
+					exact
+					path="/my-restaurant/edit"
+					component={Editrestaurant}
+				/>
+				<PrivateRoute
+					exact
+					path="/my-restaurant/transaction"
+					component={Transaction}
+				/>
+				editProduct
+				<PrivateRoute
+					exact
+					path="/my-restaurant/addbook"
+					component={AddProduct}
+				/>
+				<PrivateRoute
+					exact
+					path="/my-restaurant/editbook/:id"
+					component={EditProduct}
+				/>
+				{/* <PrivateRoute exact path="/my-restaurant/book" component={AddProduct} /> */}
+				<Route exact path="/test">
+					<Test />
+				</Route>
+			</Switch>
+			<Register />
+			<Modal />
+			<Login />
+			<Child popUP={query.get("popup")} />
+		</KeranjangContextProvider>
 	);
 }
 
 function Child({ popUP }) {
+	const history = useHistory();
 	const [show, setShow] = useState(true);
-	// const handleClose = () => setShow(false);
-	console.log("sow", show);
 	const close = () => {
+		history.push("/");
 		setShow(false);
 	};
+	const open = () => {
+		setShow(true);
+	};
 	useEffect(() => {
-		console.log("useEffect componentDidMount");
 		if (popUP) {
-			setShow(true);
-			// console.log("popup");
+			open();
 		}
-	}, []); //fetching data dari API
+	}, [open]);
 
 	return (
 		<>
 			{popUP === "login" && (
 				<>
 					<Login show={show} onHide={close} />
-
-					{show === false ? <Redirect to="/" /> : <></>}
+					{console.log("show", show)}
 				</>
 			)}
 		</>
